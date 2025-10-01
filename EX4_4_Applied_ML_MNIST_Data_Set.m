@@ -174,9 +174,10 @@ MNISTInfo = temp.MNISTInfo; % Create a second variable to hold the structure; th
 %%
 %% Parse data
 
-% Training Set Images
-fileName = [MNISTInfo.outputFolderTrainingSetImages];%, '/', MNISTInfo.outputFolderTrainingSetImages];
-disp(['Now reading from ', fileName]) %[output:2b0b1e22]
+% *Training Set Images*
+
+fileName = [MNISTInfo.outputFolderTrainingSetImages];%, '/', MNISTInfo.outputFolderTrainingSetImages]; %[output:0b2c11fc]
+disp(['Now reading from ', fileName])
 %[text] **Important note:** Deviated from Lum's code by setting only the top-level file name to the `fileName` variable. A *warning* was being thrown when appending the file name with the lower-level file (of the same name).
 %%
 % Use the 'safeAddPath' routine to validate folder existence before adding
@@ -357,7 +358,37 @@ catch ME
 end %[output:group:4a9f6983]
 % (I LOVE COPILOT!!)
 %%
-% 9/27/25 -- Continue here with the TrainingSetLabels section
+% *Training Set Labels* %[text:anchor:TMP_6836]
+
+fileName = [MNISTInfo.outputFolderTrainingSetLabels];
+disp(['Now reading from ', fileName]) %[output:5304f250]
+safeAddPath(fileName); %[output:372131ff]
+fileName = [fileName, '/', 'train-labels-idx3-ubyte'];
+%%
+% Tues 9/30/25 -- Continue here with the TrainingSetLabels section
+
+% Diagnostics block for the Training Set Labels
+% TRY, CATCH block to assert:
+% 1. Magic Number (asserts it is equal to Training Set Labels identifier of 2049)
+% 2. Number of items (labels)
+% 3/4. Max/Min values in the labels are 0 <= x <= 9.
+% with unique, value-embedded cause messages:
+
+try
+    baseException = MException('Validation:HeaderCheckFailed', ...
+        'One or more header values failed validation.')
+
+    permission = 'r';
+    machinefmt = 'b';
+
+    fileID = fopen(fileName, permission, machinefmt); % Opens the file
+
+    % Variables to be asserted
+    magicNumber = fread(fileID, 1, 'int32');
+    numItems = fread(fileID, 1, 'int32');
+    TrainingSetLabels = uint8(zeros(numItems,1));
+    % [CONTINUE HERE... --What exactly is being stored into the TrainingSetLabels array??
+    % -ERODRIGUEZ, 30SEP2025 20:13]
 
     % (Using Lum's code-base as a guide.) -ERODRIGUEZ2, 1SEP2025 17:25
 %%
@@ -437,8 +468,8 @@ fclose(fid);
 %[metadata:view]
 %   data: {"layout":"onright","rightPanelPercent":35.4}
 %---
-%[output:2b0b1e22]
-%   data: {"dataType":"text","outputData":{"text":"Now reading from train-images-idx3-ubyte\n","truncated":false}}
+%[output:0b2c11fc]
+%   data: {"dataType":"error","outputData":{"errorType":"runtime","text":"Unable to resolve the name 'MNISTInfo.outputFolderTrainingSetImages'."}}
 %---
 %[output:89459007]
 %   data: {"dataType":"text","outputData":{"text":"✅ Folder added to path: train-images-idx3-ubyte\n","truncated":false}}
@@ -460,4 +491,10 @@ fclose(fid);
 %---
 %[output:3388cc0d]
 %   data: {"dataType":"text","outputData":{"text":"✅ All pixel values are within the valid range of 0 to 255.\n","truncated":false}}
+%---
+%[output:5304f250]
+%   data: {"dataType":"text","outputData":{"text":"Now reading from train-labels-idx1-ubyte\n","truncated":false}}
+%---
+%[output:372131ff]
+%   data: {"dataType":"text","outputData":{"text":"✅ Folder added to path: train-labels-idx1-ubyte\n","truncated":false}}
 %---
