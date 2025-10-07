@@ -478,9 +478,26 @@ catch ME
     % returns it as formatted text, 'extended' type includes the line number, 
     % error message, cause, and stack summary.
 end
+%%
+%[text] #### Test Set Images
+% *Test Set Images*
+temp = load('MNISTInfo.mat'); % Load the 'Load Data' section's workspace variables to the TEMP strucutre.
+MNISTInfo = temp.MNISTInfo; % Create a second variable to hold the structure;
 
+fileName = [MNISTInfo.outputFolderTestSetImages];
+disp(['Now reading from ', fileName]); %[output:7fcbce55]
 
-    % (Using Lum's code-base as a guide.) -ERODRIGUEZ2, 1SEP2025 17:25
+safeAddPath(fileName); % Add the Test Set Images file name to the search path. %[output:7edaec32]
+fileName = [fileName, '/', 't10k-images-idx3-ubyte']; % Append the file name with the lower-level file
+%%
+% Diagnostics block for the Training Set Labels
+% TRY, CATCH block to assert:
+% 1. Magic number = 2051
+% 2. ----
+% 3. ----
+
+% CONTINUE HERE...-ERODRIGUEZ2, Mon 6OCT2025 20:11
+% (Using Lum's code-base as a guide.) -ERODRIGUEZ2, Sat 4OCT2025 15:02
 %%
 %[text] Side note:
 %[text] `uint8` stands for "unsigned 8-bit integer"
@@ -581,4 +598,10 @@ fclose(fid);
 %---
 %[output:981cc762]
 %   data: {"dataType":"text","outputData":{"text":"✅ All pixel values are within the valid range of 0 to 255, ...which is the valid range of values for an unsigned 8-bit integer.\n","truncated":false}}
+%---
+%[output:7fcbce55]
+%   data: {"dataType":"text","outputData":{"text":"Now reading from t10k-images-idx3-ubyte\n","truncated":false}}
+%---
+%[output:7edaec32]
+%   data: {"dataType":"text","outputData":{"text":"✅ Folder added to path: t10k-images-idx3-ubyte\n","truncated":false}}
 %---
