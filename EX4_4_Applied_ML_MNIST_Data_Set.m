@@ -373,12 +373,10 @@ end %[output:group:4a9f6983]
 % *Training Set Labels* %[text:anchor:TMP_6836]
 
 fileName = [MNISTInfo.outputFolderTrainingSetLabels];
-disp(['Now reading from ', fileName])
-safeAddPath(fileName);
+disp(['Now reading from ', fileName]) %[output:9832e29d]
+safeAddPath(fileName); %[output:48268f2d]
 fileName = [fileName, '/', fileName]; % Append the file name with the lower-level file name
 %%
-% Tues 9/30/25 -- Continue here with the TrainingSetLabels section
-
 % Diagnostics block for the Training Set Labels
 % TRY, CATCH block to assert:
 % 1. Magic Number (asserts it is equal to Training Set Labels identifier of 2049)
@@ -490,13 +488,15 @@ disp(['Now reading from ', fileName]); %[output:7fcbce55]
 safeAddPath(fileName); % Add the Test Set Images file name to the search path. %[output:7edaec32]
 fileName = [fileName, '/', 't10k-images-idx3-ubyte']; % Append the file name with the lower-level file
 %%
-% Diagnostics block for the Training Set Labels
-% TRY, CATCH block to assert:
-% 1. Magic number = 2051
-% 2. ----
-% 3. ----
+% Diagnostics block for the Test Set Images
 
-% CONTINUE HERE...-ERODRIGUEZ2, Mon 6OCT2025 20:11
+% TRY, CATCH block to assert:
+% 1. Magic number == 2049
+% 2. Number of items (# test images) == 10,000
+% 3. Number of rows == 28 (for a 28x28 pixel image)
+% 4. Number of cols == 28 (for a 28x28 pixel image)
+
+% CONTINUE HERE...-ERODRIGUEZ2, Mon 23OCT2025 19:15
 % (Using Lum's code-base as a guide.) -ERODRIGUEZ2, Sat 4OCT2025 15:02
 %%
 %[text] Side note:
@@ -598,6 +598,12 @@ fclose(fid);
 %---
 %[output:981cc762]
 %   data: {"dataType":"text","outputData":{"text":"✅ All pixel values are within the valid range of 0 to 255, ...which is the valid range of values for an unsigned 8-bit integer.\n","truncated":false}}
+%---
+%[output:9832e29d]
+%   data: {"dataType":"text","outputData":{"text":"Now reading from train-labels-idx1-ubyte\n","truncated":false}}
+%---
+%[output:48268f2d]
+%   data: {"dataType":"text","outputData":{"text":"✅ Folder added to path: train-labels-idx1-ubyte\n","truncated":false}}
 %---
 %[output:7fcbce55]
 %   data: {"dataType":"text","outputData":{"text":"Now reading from t10k-images-idx3-ubyte\n","truncated":false}}
