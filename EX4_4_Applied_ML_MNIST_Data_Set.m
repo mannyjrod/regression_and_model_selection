@@ -512,7 +512,7 @@ try %[output:group:6e31cdef]
 
     fileID = fopen(fileName, permission, machinefmt);
 
-    % Assertion items:
+    % Assertion variables:
     magicNumber = fread(fileID, 1, 'int32');
     numItems = fread(fileID, 1, 'int32');
     numRows = fread(fileID, 1, 'int32');
@@ -624,6 +624,53 @@ end %[output:group:6e31cdef]
 
 
 % End of Diagnostics block for Test Set Images. -ERODRIGUEZ, SAT. 25OCT2025 18:10
+%%
+%[text] #### Test Set Labels
+% *Test Set Labels*
+
+fileName = [MNISTInfo.outputFolderTestSetLabels];
+disp(['Now reading from ', fileName]) %[output:73a3c7c7]
+safeAddPath(fileName); %[output:785ec163]
+fileName = [fileName, '/', fileName];
+%%
+% Diagnostics block for the Test Set Labels
+% TRY, CATCH block to assert:
+% 1. Magic Number == 2049 (for LABELS)
+% 2. Number of Items == 10000
+% 3. Max Label <= 9
+% 4. Min Label >= 0
+% with unique, value-embedded cause messages:
+
+try
+    baseException = MException('Validation:HeaderCheckFailed', ...
+        'One or more header values failed validation.');
+
+    permission = 'r';
+    machinefmt = 'b';
+
+    fileID = fopen(fileName, permission, machinefmt);
+
+    % Assertion variables:
+    magicNumber = fread(fileID, 1, 'int32');
+    numItems = fread(fileID, 1, 'int32');
+    % Create an array to hold the image labels:
+    TestSetLabels = uint8(zeros(numItems,1)); % Initialize; numItems (10k) rows by 1 column,
+    % unsigned 8-bit integer, meaning: 2^8 = 256 possible combinations, or
+    % a range of values from 0 to 255.
+    for k = 1:numItems
+        TestSetLabels(k) = fread(fileID, 1, 'uint8');
+
+        % Display progress:
+        if(mod(k, samplesBetweenDiagnostics) == 0) % Use the MODULO operation; when k = samplesBetweenDiagnostics, then the remainder after division is zero and therefore this triggers the "hard stop."
+            disp([num2str(k/numItems*100), '% complete.'])
+        end
+    end
+
+    % Assertion 1: Magic Number
+        
+
+
+% ***CONTINUE HERE... -ERODRIGUEZ2, 25OCT2025 18:17
 %%
 %[text] Side note:
 %[text] `uint8` stands for "unsigned 8-bit integer"
@@ -742,4 +789,10 @@ fclose(fid);
 %---
 %[output:3efaf019]
 %   data: {"dataType":"text","outputData":{"text":"✅ All pixel values are within the valid range of 0 to 255, which is the valid range of values for an unsigned 8-bit integer.\n","truncated":false}}
+%---
+%[output:73a3c7c7]
+%   data: {"dataType":"text","outputData":{"text":"Now reading from t10k-labels-idx1-ubyte\n","truncated":false}}
+%---
+%[output:785ec163]
+%   data: {"dataType":"text","outputData":{"text":"✅ Folder added to path: t10k-labels-idx1-ubyte\n","truncated":false}}
 %---
