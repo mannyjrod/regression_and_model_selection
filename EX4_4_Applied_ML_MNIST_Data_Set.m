@@ -489,8 +489,10 @@ safeAddPath(fileName); % Add the Test Set Images file name to the search path. %
 fileName = [fileName, '/', 't10k-images-idx3-ubyte']; % Append the file name with the lower-level file
 %%
 %% User selections
-samplesBetweenDiagnostics = 500; % This sets the # of samples (individual image files)
+%samplesBetweenDiagnostics = 500; % This sets the # of samples (individual image files)
 % to run through the try, catch block, the diagnostics.
+
+% Commented out since this variable is set in the code's preamble.
 %%
 % Diagnostics block for the Test Set Images
 
@@ -592,13 +594,13 @@ try %[output:group:6e31cdef]
     % Assert that the max pixel value is less than or equal to 255 (max
     % value of an 8-bit integer).
     assert(max(TestSetImages(:)) <= 255, ...
-        'MNIST:PixelOverflow', ...
+        'MNIST:PixelOverFlow', ...
         ['Pixel intensity exceeds 8-bit range: Maximum value found was ', ...
         num2str(max(TestSetImages(:))), '. Expected maximum is 255.']);
 
     % Assert that the min pixel value is greater than or equal to 0.
     assert(min(TestSetImages(:)) >= 0, ...
-        'MNIST:PixelUnderflow', ...
+        'MNIST:PixelUnderFlow', ...
         ['Pixel intensity below 8-bit range: Minimum value found was ', ...
         num2str(min(TestSetImages(:))), '. Expected minimum is 0.']);
 
@@ -629,11 +631,11 @@ end %[output:group:6e31cdef]
 % *Test Set Labels*
 
 fileName = [MNISTInfo.outputFolderTestSetLabels];
-disp(['Now reading from ', fileName]) %[output:73a3c7c7]
-safeAddPath(fileName); %[output:785ec163]
+disp(['Now reading from ', fileName]) %[output:66f08c6d]
+safeAddPath(fileName); %[output:0d354e73]
 fileName = [fileName, '/', fileName];
 %%
-% Diagnostics block for the Test Set Labels
+% Diagnostics block for the Test Set Labels - Start
 % TRY, CATCH block to assert:
 % 1. Magic Number == 2049 (for LABELS)
 % 2. Number of Items == 10000
@@ -641,7 +643,7 @@ fileName = [fileName, '/', fileName];
 % 4. Min Label >= 0
 % with unique, value-embedded cause messages:
 
-try
+try %[output:group:8705f218]
     baseException = MException('Validation:HeaderCheckFailed', ...
         'One or more header values failed validation.');
 
@@ -653,24 +655,100 @@ try
     % Assertion variables:
     magicNumber = fread(fileID, 1, 'int32');
     numItems = fread(fileID, 1, 'int32');
-    % Create an array to hold the image labels:
+    
+        % Create an array to hold the image labels:
     TestSetLabels = uint8(zeros(numItems,1)); % Initialize; numItems (10k) rows by 1 column,
-    % unsigned 8-bit integer, meaning: 2^8 = 256 possible combinations, or
-    % a range of values from 0 to 255.
+        % unsigned 8-bit integer, meaning: 2^8 = 256 possible combinations, or
+        % a range of values from 0 to 255.
+
     for k = 1:numItems
-        TestSetLabels(k) = fread(fileID, 1, 'uint8');
+        TestSetLabels(k) = fread(fileID, 1, 'uint8'); % Every iteration stores the label in a row as an 8-bit unsigned integer.
 
         % Display progress:
         if(mod(k, samplesBetweenDiagnostics) == 0) % Use the MODULO operation; when k = samplesBetweenDiagnostics, then the remainder after division is zero and therefore this triggers the "hard stop."
-            disp([num2str(k/numItems*100), '% complete.'])
+            disp([num2str(k/numItems*100), '% complete.']) %[output:19deb66c]
         end
     end
 
     % Assertion 1: Magic Number
-        
+    try
+        assert(magicNumber == 2049, ...
+            'Validation:InvalidMagicNumber', ...
+            ['Magic number mismatch: Expected 2049 for training label file, but received ', ...
+            num2str(magicNumber), '.']);
+        % Recall, ASSERT syntax: assert(condition, errID, msg)
+    catch cause1
+        baseException = addCause(baseException, cause1);
+    end
 
+    % Assertion 2: Number of Items
+    try
+        assert(numItems == 10000, ...
+            'Validation:UnexpectedItemCount', ...
+            ['Item count mismatch: Expected 10,000 labels, but received ', ...
+            num2str(numItems), '.']);
+    catch cause2
+        baseException = addCause(baseException, cause2);
+    end
 
-% ***CONTINUE HERE... -ERODRIGUEZ2, 25OCT2025 18:17
+    % Throw exception if assertion fails.
+    % "Halfway point" to throw exception; at this point only header values
+    % and number of labels are being checked for.
+    if ~isempty(baseException.cause)
+        throw(baseException);
+    else
+        disp('✅ Header values and number of labels passed validation.'); %[output:1b46fa4d]
+    end
+
+    % Assertion 3: Max value in the labels array.
+    try
+        assert(max(TestSetLabels(:)) <= 9, ...
+            'MNIST:LabelOverFlow', ...
+            ['Label exceeds range: Maximum value found was ', ...
+            num2str(max(TestSetLabels(:))), '. Expected maximum is 9.']);
+    catch cause3
+        baseException = addCause(baseException, cause3);
+    end
+
+    % Assertion 4: Min value in the labels array.
+    try
+        assert(min(TestSetLabels(:)) >=0, ...
+            'MNIST:LabelUnderFlow', ...
+            ['Label exceeds range: Minimum value found was ', ...
+            num2str(min(TestSetLabels(:))), '. Expected minimum is 0.']);
+    catch cause4
+        baseException = addCause(baseException, cause4);
+    end
+    % Throw exception if assertion fails.
+    if ~isempty(baseException.cause)
+        throw(baseException);
+    else
+        disp('✅ All label values are within the valid range of 0 to 9.'); %[output:1e4a7bf2]
+    end
+
+    fclose(fileID); % Close the file. >----------------------------------
+                    %                                                   |
+                    %                                                   |   
+    % Recall: Tip 40 - Finish What You Start.                           |
+    % I.e., Balance resources!--> The function or object that allocates |
+    % a resource should be responsible for deallocating it, ideally, a  |
+    % routine that allocates a resource should also free it.            |
+    % We've opened the file in this routine, and now we're closing it.  |
+    % <-----------------------------------------------------------------|
+
+catch ME
+    % Display full error report, including all causes
+    warning(ME.message)
+    fclose(fileID);
+
+    disp('❌ Validation Error Encountered:');
+    disp(getReport(ME, 'extended')); % Gets the error message for an exception and
+    % returns it as formatted text, 'extended' type includes the line
+    % number, error message, cause, and stack summary.
+end %[output:group:8705f218]
+
+% End diagnostics block for Test Set Labels. 
+% -ERODRIGUEZ2, Sun 26OCT2025 12:38
 %%
 %[text] Side note:
 %[text] `uint8` stands for "unsigned 8-bit integer"
@@ -790,9 +868,18 @@ fclose(fid);
 %[output:3efaf019]
 %   data: {"dataType":"text","outputData":{"text":"✅ All pixel values are within the valid range of 0 to 255, which is the valid range of values for an unsigned 8-bit integer.\n","truncated":false}}
 %---
-%[output:73a3c7c7]
+%[output:66f08c6d]
 %   data: {"dataType":"text","outputData":{"text":"Now reading from t10k-labels-idx1-ubyte\n","truncated":false}}
 %---
-%[output:785ec163]
+%[output:0d354e73]
 %   data: {"dataType":"text","outputData":{"text":"✅ Folder added to path: t10k-labels-idx1-ubyte\n","truncated":false}}
+%---
+%[output:19deb66c]
+%   data: {"dataType":"text","outputData":{"text":"5% complete.\n10% complete.\n15% complete.\n20% complete.\n25% complete.\n30% complete.\n35% complete.\n40% complete.\n45% complete.\n50% complete.\n55% complete.\n60% complete.\n65% complete.\n70% complete.\n75% complete.\n80% complete.\n85% complete.\n90% complete.\n95% complete.\n100% complete.\n","truncated":false}}
+%---
+%[output:1b46fa4d]
+%   data: {"dataType":"text","outputData":{"text":"✅ Header values and number of labels passed validation.\n","truncated":false}}
+%---
+%[output:1e4a7bf2]
+%   data: {"dataType":"text","outputData":{"text":"✅ All label values are within the valid range of 0 to 9.\n","truncated":false}}
 %---
