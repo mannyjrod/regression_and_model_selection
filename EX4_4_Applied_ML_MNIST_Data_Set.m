@@ -226,8 +226,8 @@ try %[output:group:4a9f6983]
     %% Four 'elements' of the file will be run through this TRY block;
     %
     % 1. magicNumber is checked against 2051, which is the value of the
-    % first 4 bits in the 32-bit integer for the TRAINING image files 
-    % (the labels files' magic number is 2049).
+    % first 4 bits in the 32-bit integer for the training IMAGE files 
+    % (the LABELS files' magic number is 2049).
     % 
     % 2. the next set of 4 bits contain the quantity of files, which should
     % be 60,000 image files.
@@ -374,7 +374,7 @@ end %[output:group:4a9f6983]
 
 fileName = [MNISTInfo.outputFolderTrainingSetLabels];
 disp(['Now reading from ', fileName]) %[output:9832e29d]
-safeAddPath(fileName); %[output:48268f2d]
+safeAddPath(fileName);
 fileName = [fileName, '/', fileName]; % Append the file name with the lower-level file name
 %%
 % Diagnostics block for the Training Set Labels
@@ -488,16 +488,142 @@ disp(['Now reading from ', fileName]); %[output:7fcbce55]
 safeAddPath(fileName); % Add the Test Set Images file name to the search path. %[output:7edaec32]
 fileName = [fileName, '/', 't10k-images-idx3-ubyte']; % Append the file name with the lower-level file
 %%
+%% User selections
+samplesBetweenDiagnostics = 500; % This sets the # of samples (individual image files)
+% to run through the try, catch block, the diagnostics.
+%%
 % Diagnostics block for the Test Set Images
 
 % TRY, CATCH block to assert:
-% 1. Magic number == 2049
+% 1. Magic number == 2051
 % 2. Number of items (# test images) == 10,000
 % 3. Number of rows == 28 (for a 28x28 pixel image)
 % 4. Number of cols == 28 (for a 28x28 pixel image)
 
-% CONTINUE HERE...-ERODRIGUEZ2, Mon 23OCT2025 19:15
-% (Using Lum's code-base as a guide.) -ERODRIGUEZ2, Sat 4OCT2025 15:02
+% For the Test Set Images data in the MNIST dataset, the specific values 
+% outlined above comprise the details of the IDX file format used for its
+% image and label files.
+try %[output:group:6e31cdef]
+    baseException = MException('Validation:HeaderCheckFailed', ...
+        'One or more header values failed validation.');
+
+    permission = 'r';
+    machinefmt = 'b';
+
+    fileID = fopen(fileName, permission, machinefmt);
+
+    % Assertion items:
+    magicNumber = fread(fileID, 1, 'int32');
+    numItems = fread(fileID, 1, 'int32');
+    numRows = fread(fileID, 1, 'int32');
+    numCols = fread(fileID, 1, 'int32');
+
+    % Assertion 1: Magic Number
+    try
+        assert(magicNumber == 2051, ...
+            'Validation:InvalidMagicNumber', ...
+            ['Magic number mismatch: Expected 2051 for test image file, but received ', ...
+            num2str(magicNumber), '.']);
+    catch cause1
+        baseException = addCause(baseException, cause1);
+    end
+
+    % Assertion 2: Number of Items
+    try
+        assert(numItems == 10000, ...
+            'Validation:UnexpectedItemCount', ...
+            ['Item count mismatch: Expected 10,000 images, but received ', ...
+            num2str(numItems), '.']);
+    catch cause2
+        baseException = addCause(baseException, cause2);
+    end
+
+    % Assertion 3: Number of Rows
+    try
+        assert(numRows == 28, ...
+            'Validation:InvalidRowDimension', ...
+            ['Row dimension mismatch: Expected 28 pixels per image row, but received ', ...
+            num2str(numRows), '.']);
+    catch cause3
+        baseException = addCause(baseException, cause3);
+    end
+
+    % Assertion 4: Number of Columns
+    try
+        assert(numCols == 28, ...
+            'Validation:InvalidColumnDimension', ...
+            ['Column dimension mismatch: Expected 28 pixels per image column, but received ', ...
+            num2str(numCols), '.']);
+    catch cause4
+        baseException = addCause(baseException, cause4);
+    end
+
+    % Throw if any assertion failed.
+    if ~isempty(baseException.cause)
+        throw(baseException);
+    else
+        disp('✅ All header values passed validation.'); %[output:28d301b2]
+    end
+
+    % Diagnostics block to check all pixels are in the range of 0:255
+    TestSetImages = uint8(zeros(numRows, numCols, numItems));
+    for k = 1:numItems
+        % Create an array A representing an image, where each element holds
+        % the pixel value as an 8-byte unsigned integer.
+        A = uint8(zeros(numRows, numCols)); % Initialize a ZEROS array of numRows x numCols, and store it as an 8-byte unsigned integer array
+        for m = 1:numRows
+            for n = 1:numCols
+                A(m,n) = fread(fileID,1,'uint8');
+            end
+        end
+
+        % Cycle through the # of images set according to
+        % SAMPLESBETWEENDIAGNOSTICS user selection, creating a 3-D array,
+        % where each 2-D array represents the pixel map for a single image.
+        TestSetImages(:,:,k) = A; % The 2-D array, A, is appended to the 'TestSetImages' variable at every iteration, k, for 1:numItems (10,000 images)
+
+        if(mod(k,samplesBetweenDiagnostics)==0) % Use the MODULO operation; when k = SAMPLESBETWEENDIAGNOSTICS, then the remainder after division is zero and therefore this triggers the "hard stop."
+            disp([num2str(k/numItems*100), '% complete']) %[output:5cbf2fc0]
+        end
+    end
+
+    %% Validate pixel intensity range
+
+    % Assert that the max pixel value is less than or equal to 255 (max
+    % value of an 8-bit integer).
+    assert(max(TestSetImages(:)) <= 255, ...
+        'MNIST:PixelOverflow', ...
+        ['Pixel intensity exceeds 8-bit range: Maximum value found was ', ...
+        num2str(max(TestSetImages(:))), '. Expected maximum is 255.']);
+
+    % Assert that the min pixel value is greater than or equal to 0.
+    assert(min(TestSetImages(:)) >= 0, ...
+        'MNIST:PixelUnderflow', ...
+        ['Pixel intensity below 8-bit range: Minimum value found was ', ...
+        num2str(min(TestSetImages(:))), '. Expected minimum is 0.']);
+
+    % Throw exception if assertion fails.
+    if ~isempty(baseException.cause)
+        throw(baseException);
+    else
+        disp(['✅ All pixel values are within the valid range of 0 to 255, ' ... %[output:3efaf019]
+            'which is the valid range of values for an unsigned 8-bit integer.']); %[output:3efaf019]
+    end
+        
+    
+    fclose(fileID);
+
+catch ME
+    % Display full error report, including all causes
+    warning(ME.message)
+    fclose(fileID);
+
+    disp('❌ Validation Error Encountered:');
+    disp(getReport(ME, 'extended'));
+end %[output:group:6e31cdef]
+
+
+% End of Diagnostics block for Test Set Images. -ERODRIGUEZ, SAT. 25OCT2025 18:10
 %%
 %[text] Side note:
 %[text] `uint8` stands for "unsigned 8-bit integer"
@@ -602,12 +728,18 @@ fclose(fid);
 %[output:9832e29d]
 %   data: {"dataType":"text","outputData":{"text":"Now reading from train-labels-idx1-ubyte\n","truncated":false}}
 %---
-%[output:48268f2d]
-%   data: {"dataType":"text","outputData":{"text":"✅ Folder added to path: train-labels-idx1-ubyte\n","truncated":false}}
-%---
 %[output:7fcbce55]
 %   data: {"dataType":"text","outputData":{"text":"Now reading from t10k-images-idx3-ubyte\n","truncated":false}}
 %---
 %[output:7edaec32]
 %   data: {"dataType":"text","outputData":{"text":"✅ Folder added to path: t10k-images-idx3-ubyte\n","truncated":false}}
+%---
+%[output:28d301b2]
+%   data: {"dataType":"text","outputData":{"text":"✅ All header values passed validation.\n","truncated":false}}
+%---
+%[output:5cbf2fc0]
+%   data: {"dataType":"text","outputData":{"text":"5% complete\n10% complete\n15% complete\n20% complete\n25% complete\n30% complete\n35% complete\n40% complete\n45% complete\n50% complete\n55% complete\n60% complete\n65% complete\n70% complete\n75% complete\n80% complete\n85% complete\n90% complete\n95% complete\n100% complete\n","truncated":false}}
+%---
+%[output:3efaf019]
+%   data: {"dataType":"text","outputData":{"text":"✅ All pixel values are within the valid range of 0 to 255, which is the valid range of values for an unsigned 8-bit integer.\n","truncated":false}}
 %---
